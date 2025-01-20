@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="Auth\client_secret_218028916578-aij20143eeer21s537q9bkpc4k99t9lc.apps.googleusercontent.com.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="Store\Google.Apis.Auth.OAuth2.Responses.TokenResponse-Frederik Markussen" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Calendar.v3" Version="1.68.0.3592" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Auth\" />
+    <Folder Include="Store\" />
+  </ItemGroup>
+
+</Project>

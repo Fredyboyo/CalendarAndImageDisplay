@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  webapp:
+    image: image-api-server  # The name of the image to use
+    container_name: image-api-server-container  # Name of the container
+    ports:
+      - "5449:8080"  # Map host port 5449 to container port 8080
+    volumes:
+      - /home/www/html/foto/pictures/:/app/pictures  # Maps the host folder to the container
+      - ./token.json:/app/token.json  # Maps the host folder to the container
