@@ -1,8 +1,8 @@
-
-
 :root {
     --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --line-color: #9ca9ba;
+    --left-spacing: 90px;
+    --header-height: 48px;
 }
 
 
@@ -30,17 +30,36 @@ body {
     background: white;
 }
 
-header {
-    background-color: white;
-    border-bottom: 2px solid grey;
-    width: 100%;
-    z-index: 10;
-    max-height: 40px;
-}
-
 main {
     height: 100%;
 }
+
+header {
+    position: relative;
+    width: 100%;
+    z-index: 2;
+    height: var(--header-height);
+    border-bottom: 1px solid rgb(0,0,0,.2);
+}
+
+.headerElement {
+    height: 100%;
+    place-content: center;
+}
+
+.toggleButton {
+    padding: 5px 25px;
+    margin-left: 20px;
+    background: #fff;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 0.8px 5px #0006;
+    font-size: 16px;
+    transition: box-shadow 0.1s ease;
+}
+    .toggleButton:hover {
+        box-shadow: 0 0px 2px #0004;
+    }
 
 footer {
     position: fixed;
@@ -64,163 +83,168 @@ footer {
 .page-container {
     display: flex;
     flex-direction: row;
-    height: 100%;
-    overflow: clip;
+    height: calc(100% - var(--header-height) - 1px);
 }
 
-.calendar-container {
-    width: 40%;
-    min-width: 400px;
-    margin: 20px;
-    padding: 10px;
-    background-color: #f0f4f6;
-    border-radius: 20px;
-    overflow: clip;
-}
-
-.week-header-container, .week-container {
-    display: flex;
-    margin-left: 60px;
-    flex-direction: row;
-}
-
-.timed-container {
-    position: relative;
-}
-
-.week-container {
-    height: calc(100vh - 160px);
-}
-
-.day-container {
-    display: flex;
-    position: relative;
+.calendarContainer {
+    display:flex;
     flex-direction: column;
     width: 100%;
-    border-left: 1px solid var(--line-color);
-    word-break: break-word;
+    min-width: 400px;
+    position: relative;
 }
 
-.day-header {
-    text-align: center;
+.calendarContainerDayHeaders, .calendarContainerForWeekOfAllDayEvents {
+    display: flex;
+    flex-direction: row;
+    min-height: 32px;
+    padding-right: 18px;
+    padding-left: var(--left-spacing);
 }
-
-    .day-header strong {
-        word-break: break-word;
+.calendarContainerForWeekOfAllDayEvents {
+    border-bottom: 1px solid rgb(0,0,0,.2);
+}
+    .calendarContainerDayHeader {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        justify-content: center;
+        align-items: center;
+        border-left: 1px solid;
     }
 
-.time-container {
-    position: absolute;
-    top: 0;
-    left: 0;
+
+.calendarContainerForWeekOfAllDays {
     display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: calc(100%);
-    z-index: 1;
+    flex-direction: row;
+    padding-right: 18px;
+    padding-left: var(--left-spacing);
 }
 
-.time-container-offset {
-    /* Depricated */
+
+
+.calendarContainerForWeekOfAllTimedEvents {
+    display: flex;
     position: relative;
-    top: 80px;
+    height: 100%;
+    overflow-y: scroll;
+    /* box-shadow: 0px 0px 10px 0px #0006;*/
 }
+
+.calendarContainerForAllDayEvents {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    border-left: 1px solid;
+}
+
+.calendarContainerForTimedEvents {
+    position: relative;
+    width: 100%;
+    border-left: 1px solid;
+}
+
+.allDayEvent {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    border-radius: 5px;
+    min-height: 28px;
+}
+.timedEvent {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    border-radius: 5px;
+    width: 100%;
+    background: white;
+    height: 100%;
+}
+
+
+.timedEvent, .allDayEvent {
+    border-radius: 2px;
+    overflow: clip;
+    z-index: 1;
+    font-size: 12px;
+    transition: height 0.1s ease;
+}
+
+    .timedEvent:hover, .allDayEvent:hover {
+        z-index: 10;
+        outline: 1px solid black;
+    }
+
+.events {
+    display: flex;
+    flex-direction: row;
+    position: absolute;
+    padding-left: var(--left-spacing);
+    width: calc(100% - 1px - var(--left-spacing));
+    height: 1200px;
+}
+
+.hours {
+    position: absolute;
+    width: 100%;
+    height: 1200px;
+}
+
+
 
 .hour {
     position: relative;
-    min-width: 50px;
-    margin-right: 5px;
-    height: 100%;
+    height: 48px;
+    width: 100%;
 }
 
 .hour-time {
     position: absolute;
-    top: -12px;
-    left: -8px;
-    text-align: right;
     width: 42px;
+    padding-left: 25px;
+    background: white;
+    width: calc(100% - 25px);
 }
 
 .vertical-bar {
     position: absolute;
-    left: 40px;
+    left: calc(var(--left-spacing) - 16px);
+    top: 12px;
     border-bottom: 1px solid var(--line-color);
-    width: calc(95% - 5px);
+    width: calc(95% - 10px);
 }
 
 /**/
 
-
-.full-day-event-item, .day-event-group {
-    padding: 2px 6px 4px 6px;
-    background-color: #f9f9f9;
-    border-radius: 2px;
-    overflow: clip;
-    font-size: 12px;
+.innerEventBody {
+    padding: 5px;
+    height:100%;
 }
-
-.full-day-event-item {
-    margin: 1px 4px 3px 4px;
-    z-index: 12;
-}
-
-.day-event-group {
-    position: absolute;
-    top: 0px;
-    z-index: 12;
-    min-height: 16px;
-    overflow: clip;
-    width: calc(100% - 12px);
-}
-
-    .day-event-group:hover {
-        z-index: 100;
-        overflow: auto;
-        max-height: fit-content;
-        height: fit-content;
-        outline: 1px solid black;
-    }
-
-        .day-event-group .day-event-item {
-            display: none;
-        }
-
-        .day-event-group:hover .day-event-item {
-            display: block;
-        }
-
-        .event-item-body {
-            padding: 4px;
-        }
 
 .image-displayer {
     display: flex;
     flex-flow: column-reverse;
     flex-direction: column;
-    justify-content: center;
-    align-content: center;
-    align-items: center;
-    width: calc(100vw - 40%);
-    overflow: clip;
+    width: 100%;
+    height: 100%;
 }
 
 .image-div {
     display: flex;
     width: 100%;
-    height: calc(100% - 40px);
+    height: calc(100% - 220px);
     justify-content: center;
-    align-content: center;
-    align-items: center;
 }
 
 #randomImage {
     object-fit: contain;
-    min-height: calc(90% - 20px);
-    min-width: calc(90% - 20px);
-    max-height: calc(90% - 20px);
-    max-width: calc(90% - 20px);
-    opacity: 0;
-    transition: opacity 1.5s ease-in-out;
+    image-rendering: pixelated;
+    transition: opacity 0.1s ease-in-out;
+    width: 100%;
+    height: 100%;
 }
 
 .fileName {
@@ -230,9 +254,98 @@ footer {
     align-content: center;
 }
 
-#fileName {
-    margin: 0;
+.imageControls {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    width: 100%;
+    height: 40px;
+    justify-content: center;
 }
+.imageControlButton:first-child {
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+.imageControlButton:last-child {
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.imageControlButton {
+    min-width: 100px;
+    padding-left: 10px;
+    padding-right: 10px;
+    background-color: rgb(230,230,230, 1);
+    border: none;
+    text-align: center;
+    line-height: 40px;
+    transition: background-color 0.2s ease;
+}
+
+    .imageControlButton:hover {
+        background: white;
+    }
+
+.subContainers {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50px;
+    width: 100%;
+}
+
+.memoryCircles {
+    display: flex;
+    justify-content: space-between;
+    width: 200px;
+    position: relative;
+}
+
+.memoryCircle {
+    width: 20px;
+    height: 20px;
+    background-color: rgb(240,240,240,1);
+    border-radius: 50%;
+    margin: 0 5px;
+}
+
+.imageLoaded {
+    background-color: rgb(150,150,150,1);
+}
+
+.progress-container {
+    width: 100%;
+    background-color: #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    height: 24px;
+    position: relative;
+}
+
+#progressBar {
+    background-color: red;
+    height: 100%;
+    width: 0;
+    background-color: #4CAF50;
+    transition: width 0.1s linear;
+}
+
+.memoryRing {
+    position: absolute;
+    width: 30px; /* Slightly bigger than circle */
+    height: 30px;
+    border: 4px solid red;
+    border-radius: 50%;
+    top: 50%;
+    left: 0;
+    transform: translate(0, -50%); /* center vertically */
+    transition: left 0.3s ease;
+    pointer-events: none; /* so it doesn't block clicks */
+}
+
+
+
 
 /* Scalable Box Container */
 .scalable-box {

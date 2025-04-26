@@ -1,0 +1,377 @@
+﻿@page
+@using Google.Apis.Calendar.v3.Data
+@using CalendarAndImageDisplay.Model;
+@model IndexModel
+@{
+    ViewData["Title"] = "Kalender og billeder";
+}
+
+<header class="header">
+    <button id="tb" class="toggleButton" onclick="toggleCalendar()">
+        Switch to image display
+    </button>
+</header>
+<div class="page-container">
+    <div id="cc" class="calendarContainer">
+        <div class="calendarContainerDayHeaders">
+            @foreach(Day day in Model.Days)
+            {
+                <div class="calendarContainerDayHeader">
+                    <span>
+                        @(@day.Date.ToString("dddd", new System.Globalization.CultureInfo("da-DK")).Substring(0, 1).ToUpper()
+                                                                        + @day.Date.ToString("dddd", new System.Globalization.CultureInfo("da-DK")).Substring(1).ToLower())
+                    </span>
+                </div>
+            }
+        </div>
+        <div class="calendarContainerForWeekOfAllDayEvents">
+            @foreach (Day day in Model.Days)
+            {
+                Dictionary<DateTime, List<DayEvent>> eventGroups = [];
+                List<DayEvent> allDayEvents = [];
+                foreach (DayEvent dayEvent in day.Events)
+                {
+                    if (dayEvent.IsFullDayEvent)
+                    {
+                        allDayEvents.Add(dayEvent);
+                    }
+                    else
+                    {
+                        if (eventGroups.TryGetValue(dayEvent.StartTime, out List<DayEvent>? group))
+                        {
+                            group.Add(dayEvent);
+                        }
+                        else
+                        {
+                            eventGroups.Add(dayEvent.StartTime, [dayEvent]);
+                        }
+                    }
+                }
+                <div class="calendarContainerForAllDayEvents">
+                    @foreach (DayEvent dayEvent in day.Events)
+                    {
+                        if (dayEvent.IsFullDayEvent)
+                        {
+                            <div class="allDayEvent" style="background-color: @(dayEvent.Color?.Background)99;">
+                                <span>
+                                    @dayEvent.Title
+                                </span>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+        <div id="TimedEvents" class="calendarContainerForWeekOfAllTimedEvents">
+            <div class="hours">
+                @for (int i = 0; i < 25; i++)
+                {
+                    <div class="hour">
+                        <div class="hour-time">
+                            <span>@i:00</span>
+                        </div>
+                        <div class="vertical-bar"></div>
+                    </div>
+                }
+            </div>
+            <div class="events">
+                @foreach (Day day in Model.Days)
+                {
+                    Dictionary<DateTime, EventGroup> eventGroups = [];
+                    List<DayEvent> allDayEvents = [];
+                    foreach (DayEvent dayEvent in day.Events)
+                    {
+                        if (dayEvent.IsFullDayEvent)
+                        {
+                            allDayEvents.Add(dayEvent);
+                        }
+                        else
+                        {
+                            if (eventGroups.TryGetValue(dayEvent.StartTime, out EventGroup? group))
+                            {
+                                group.Add(dayEvent);
+                            }
+                            else
+                            {
+                                group = new EventGroup(dayEvent);
+                                eventGroups.Add(dayEvent.StartTime, group);
+                            }
+                        }
+                    }
+                    <div class="calendarContainerForTimedEvents">
+                        @foreach (DateTime startTime in eventGroups.Keys)
+                        {
+                            EventGroup eventGroup = eventGroups[startTime];
+                            double startTimeInMinutes = eventGroup.StartTime.TimeOfDay.TotalMinutes / 60;
+                            double endTimeInMinutes = eventGroup.EndTime.TimeOfDay.TotalMinutes / 60;
+                            int dynamicHeight = (int)(endTimeInMinutes - startTimeInMinutes) * 48;
+                            <div class="timedEvent" style="top: @(startTimeInMinutes * 48 + 12)px; height: @(dynamicHeight)px;" onmouseover="adjustHeight(this, @dynamicHeight)" onmouseout="resetHeight(this, @dynamicHeight)">
+                                @foreach (DayEvent dayEvent in eventGroup.Events)
+                                {
+                                    string baseColor = dayEvent.Color?.Background ?? "#3498db"; // Default to a blue if null
+                                    <div class="innerEventBody" style="background: @(baseColor); ">
+                                        <span>
+                                            <b>@dayEvent.Title</b>, @dayEvent.CalendarName
+                                            <br />
+                                            @dayEvent.StartTime.ToShortTimeString() - @dayEvent.EndTime.ToShortTimeString()
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+
+    </div>
+
+    <div id="id" class="image-displayer" style="display: none;">
+        <div class="image-div">
+            <img id="randomImage" src="" alt="Random Image" style="width: 500px; height: auto;">
+        </div>
+        <div class="fileName">
+            <p id="fileName"></p>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    document.getElementById("TimedEvents").scrollTop = (48 * 8);
+
+    function adjustHeight(element, minHeight) {
+        let scrollHeight = element.scrollHeight;
+        if (scrollHeight > minHeight) {
+            element.style.height = scrollHeight + "px";
+        }
+    }
+
+    function resetHeight(element, minHeight) {
+        element.style.height = minHeight + "px";
+    }
+
+
+    function toggleCalendar() {
+        console.log("Hello world");
+        var calendarContainer = document.getElementById('cc');
+        var toggleButton = document.getElementById('tb');
+        var imageContainer = document.getElementById('id');
+
+        var display = calendarContainer.style.display;
+        // Check if the display style is 'none'
+        if (display === 'none') {
+            // Show the calendar
+            toggleButton.innerHTML = "Switch to image display"
+            imageContainer.style.display = 'none';
+            calendarContainer.style.display = 'flex'; // or 'flex', 'inline', depending on the layout
+        } else {
+            // Hide the calendar
+            toggleButton.innerHTML = "Switch to calendar"
+            imageContainer.style.display = 'flex';
+            calendarContainer.style.display = 'none';
+        }
+    }
+
+
+    // Function to fetch calendar data
+    async function fetchCalendar() {
+        try {
+            const response = await fetch('/api/calendar');
+            if (!response.ok) {
+                throw new Error('Failed to fetch calendar data');
+            }
+            const data = await response.json();
+            if (data.type === 'calendar') {
+
+                const days = data.content;
+                const calendarContainer = document.getElementById('calendarContainer');
+                const weekContainer = document.getElementById('weekContainer');
+                calendarContainer.innerHTML = '';
+                weekContainer.innerHTML = '';
+
+                if (!days || days.length === 0) {
+                    calendarContainer.innerHTML = `<p>Error: No calendar data available. Please contact support.</p>`;
+                    return;
+                }
+
+                const weekHeaderContainer = document.createElement('div');
+                weekHeaderContainer.classList.add('week-header-container');
+
+                for(let i = 0; i < days.length; i++) {
+                    const day = days[i];
+
+                    const dayName = new Date(day.date).toLocaleDateString('da-DK', { weekday: 'long' });
+                    const capitalizedDay = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+
+                    const dayContainer = document.createElement('div');
+                    dayContainer.classList.add('day-container');
+
+                    const dayHeader = document.createElement('div');
+                    dayHeader.classList.add('day-header');
+                    dayHeader.innerHTML = `<strong>${capitalizedDay} - ${new Date(day.date).toLocaleDateString('da-DK', { day: '2-digit', month: 'numeric' })}</strong>`;
+                    dayContainer.appendChild(dayHeader);
+
+                    day.events.forEach(eventItem => {
+                        if (eventItem.isFullDayEvent) {
+                            const eventElement = document.createElement('div');
+                            eventElement.classList.add('full-day-event-item');
+                            eventElement.style.backgroundColor = eventItem.color?.background || '#f0f0f0';
+                            eventElement.innerHTML = `<strong>${eventItem.title}</strong>`;
+                            dayContainer.appendChild(eventElement);
+                        }
+                    });
+                    weekHeaderContainer.appendChild(dayContainer);
+                }
+
+                calendarContainer.appendChild(weekHeaderContainer);
+
+                // Populate timed events
+                const containerHeight = weekContainer.offsetHeight;
+                days.forEach(day => {
+                    const dayTimedContainer = document.createElement('div');
+                    dayTimedContainer.classList.add('day-container');
+
+
+
+                    const eventList = [];
+                    day.events.forEach(eventItem => {
+                        if (!eventItem.isFullDayEvent) {
+                            let startTime = new Date(eventItem.startTime);
+                            let endTime = new Date(eventItem.endTime);
+                            let found = false;
+                            eventList.forEach(eventGroup => {
+                                const OtherStartTime = new Date(eventGroup.startTime);
+                                if (startTime.getTime() === OtherStartTime.getTime()) {
+                                    eventGroup.events.push(eventItem);
+                                    if (eventGroup.endTime.getTime() < endTime.getTime()) {
+                                        eventGroup.endTime = endTime;
+                                    }
+                                    found = true;
+                                }
+                            });
+                            if (found == false) {
+                                eventList.push({startTime: startTime, endTime: endTime, events: [eventItem]});
+                            }
+                        }
+                    });
+
+
+                    eventList.forEach(eventGroup => {
+                        const eventItem1 = eventGroup.events[0];
+                        if (eventGroup.events.length > 1) {
+                            const timedEventGroup = document.createElement('div');
+
+                            let startTime = new Date(eventGroup.startTime);
+                            let endTime = new Date(eventGroup.endTime);
+
+                            let startInMinutes = (startTime.getHours() * 60) + startTime.getMinutes();
+                            let endInMinutes = (endTime.getHours() * 60) + endTime.getMinutes();
+
+                            const topPosition = (startInMinutes / 1440.0) * (containerHeight - containerHeight / 24);
+                            const bottomPosition = (endInMinutes / 1440.0) * (containerHeight - containerHeight / 24);
+                            const diff = bottomPosition - topPosition;
+
+                            timedEventGroup.classList.add('day-event-group');
+
+                            timedEventGroup.style.border = "1px black solid";
+                            timedEventGroup.style.width = "calc(100% - 14px)";
+                            timedEventGroup.style.top = `${topPosition}px`;
+                            timedEventGroup.style.minHeight = `${(diff-6)}px`;
+
+                            timedEventGroup.innerHTML = "<span>" + new Date(eventItem1.startTime).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) + "-" + new Date(eventItem1.endTime).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) + " | </span>" +
+                            "<strong>" + eventGroup.events.length + " events... </strong>";
+
+                            eventGroup.events.forEach(eventItem => {
+                                const timedEventElement = document.createElement('div');
+                                timedEventElement.classList.add('day-event-item');
+
+                                timedEventElement.style.backgroundColor = eventItem.color?.background || '#f0f0f0';
+                                timedEventElement.innerHTML = `<strong>${eventItem.title}</strong><span> - ${eventItem.calenderName}</span><br><span>${new Date(eventItem.startTime).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })} - ${new Date(eventItem.endTime).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</span>`;
+                                timedEventGroup.appendChild(timedEventElement);
+                            });
+
+                            dayTimedContainer.appendChild(timedEventGroup);
+                        }
+                        else {
+                            const timedEventElement = document.createElement('div');
+
+                            let startTime = new Date(eventItem1.startTime);
+                            let endTime = new Date(eventItem1.endTime);
+
+                            let startInMinutes = (startTime.getHours() * 60) + startTime.getMinutes();
+                            let endInMinutes = (endTime.getHours() * 60) + endTime.getMinutes();
+
+                            const topPosition = (startInMinutes / 1440.0) * (containerHeight - containerHeight / 24);
+                            const bottomPosition = (endInMinutes / 1440.0) * (containerHeight - containerHeight / 24);
+                            const diff = bottomPosition - topPosition;
+
+                            timedEventElement.classList.add('day-event-group');
+
+                            timedEventElement.style.top = `${topPosition}px`;
+                            timedEventElement.style.minHeight = `${(diff-6)}px`;
+                            timedEventElement.style.backgroundColor = eventItem1.color?.background || '#f0f0f0';
+
+                            timedEventElement.innerHTML = `<strong>${eventItem1.title}</strong><span> - ${eventItem1.calenderName}</span><br><span>${new Date(eventItem1.startTime).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })} - ${new Date(eventItem1.endTime).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</span>`;
+                            
+                            dayTimedContainer.appendChild(timedEventElement);
+                        }
+                    });
+
+                    weekContainer.appendChild(dayTimedContainer);
+                });
+            } else if (data.type === 'authentication') {
+
+
+                const cc = document.getElementById('cc');
+                const validationContainer = document.createElement('div');
+                    validationContainer.innerHTML = `
+                    <span>Use this code in the link bellow<span><br>
+                    <strong>${data.content.user_code}</strong><br>
+                    <a href="${data.content.url}">${data.content.url}</a>
+                    `;
+                
+                cc.appendChild(validationContainer);
+            }
+
+        } catch (error) {
+            console.error('Error fetching calendar data:', error);
+        }
+    }
+
+    function fetchRandomImage() {
+        const imageElement = document.getElementById('randomImage');
+        const fileNameElement = document.getElementById('fileName');
+        imageElement.style.opacity = 0;
+
+        fetch('/api/random_image')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                const { fileName, contentType, imageData } = data;
+                const imageSrc = `data:${contentType};base64,${imageData}`;
+
+                setTimeout(() => {
+                    imageElement.src = imageSrc;
+                    fileNameElement.textContent = fileName;
+
+                    imageElement.onload = () => {
+                        imageElement.style.opacity = 1;
+                    };
+                }, 1000);
+            })
+            .catch(error => {
+                console.error('Error fetching the image:', error);
+            });
+    }
+
+    // Initialize
+    //fetchCalendar();
+    setInterval(fetchRandomImage, 11000);
+    fetchRandomImage();
+</script>

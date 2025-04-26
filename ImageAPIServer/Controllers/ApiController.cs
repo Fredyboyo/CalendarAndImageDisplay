@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using CalendarAndImageDisplay.Model;
+using static CalendarAndImageDisplay.Model.GoogleApiManager;
+using Microsoft.OpenApi.Validations;
 
 namespace ImageAPIServer.Controllers
 {
@@ -22,14 +24,16 @@ namespace ImageAPIServer.Controllers
         {
             try
             {
-                await GoogleApiManager.UpdateCredentials();
-                return Ok(new { type = "calendar", content = GoogleApiManager.GetDays(2) });
-            }
-            catch (TokenError)
-            {
-                (string validationUrl, string userCode) = await GoogleApiManager.StartAuthenticationProcess();
-                //Console.WriteLine(validationUrl, userCode);
-                return Ok(new { type = "authentication", content = new { url = validationUrl, user_code = userCode } } );
+                IGetCalendarServiceResponse response = await GetCalendarService();
+
+                if (response is MyCalendarService service)
+                {
+                    return Ok(new { type = "calendar", content = service.GetDays(2) });
+                } else if (response is DeviceAuthorization device)
+                {
+                    return Ok(new { type = "authentication", content = new { url = device.VerificationUrl, user_code = device.UserCode } });
+                }
+                return StatusCode(500, "Non of the above?");
             }
             catch (Exception ex)
             {
