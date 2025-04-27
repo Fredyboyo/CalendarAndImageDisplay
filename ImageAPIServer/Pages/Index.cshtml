@@ -136,33 +136,38 @@
 
     </div>
 
-    <div id="id" class="image-displayer" style="display: none;">
+    <div id="imageDisplayer" style="display: none;">
         <div class="image-div">
             <img id="randomImage" src="" alt="Random Image">
         </div>
-        <div class="subContainers">
+        <div class="longBlock">
             <span id="fileName"></span>
         </div>
-        <div class="subContainers">
-            <button class="imageControlButton" onclick="showPreviousImage()">Back</button>
-            <button id="pauseButton" class="imageControlButton" onclick="togglePause()">Pause</button>
-            <button class="imageControlButton" onclick="showNextImage()">Next</button>
-            <button class="imageControlButton" onclick="increaseSpeed()">Increase Speed</button>
-            <button class="imageControlButton" onclick="decreaseSpeed()">Decrease Speed</button>
-            <div id="speedDisplay" class="imageControlButton"></div>
-        </div>
-        <div class="subContainers">
-            <div class="memoryCircles">
-                <div onclick="showImageAt(0)" class="memoryCircle"></div>
-                <div onclick="showImageAt(1)" class="memoryCircle"></div>
-                <div onclick="showImageAt(2)" class="memoryCircle"></div>
-                <div onclick="showImageAt(3)" class="memoryCircle"></div>
-                <div onclick="showImageAt(4)" class="memoryCircle"></div>
-                <div class="memoryRing"></div>
+
+        <div class="imageControlPanel">
+            <div class="imageControlElements">
+                <button class="imageControlButton" onclick="showPreviousImage()">Back</button>
+                <button id="pauseButton" class="imageControlButton" onclick="togglePause()">Pause</button>
+                <button class="imageControlButton" onclick="showNextImage()">Next</button>
+                <button class="imageControlButton" onclick="increaseSpeed()">Increase Speed</button>
+                <button class="imageControlButton" onclick="decreaseSpeed()">Decrease Speed</button>
+                <div class="imageControlButton"><span id="speedDisplay"></span></div>
             </div>
-        </div>
-        <div class="subContainers">
-            <div id="progressBar"></div>
+            <div class="imageControlElements">
+                <div class="progress-container">
+                    <div id="progressBar"></div>
+                </div>
+            </div>
+            <div class="imageControlElements">
+                <div class="memoryCircles">
+                    <div onclick="showImageAt(0)" class="memoryCircle"></div>
+                    <div onclick="showImageAt(1)" class="memoryCircle"></div>
+                    <div onclick="showImageAt(2)" class="memoryCircle"></div>
+                    <div onclick="showImageAt(3)" class="memoryCircle"></div>
+                    <div onclick="showImageAt(4)" class="memoryCircle"></div>
+                    <div class="memoryRing"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>

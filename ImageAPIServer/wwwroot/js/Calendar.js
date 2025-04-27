@@ -1,14 +1,16 @@
 ﻿
+/* ====================== Globals ====================== */
+
 let isCalendarShown = true;
 
 let isPaused = true;
 
 const imageQueue = [];
 let currentImageIndex = 0;
-let fetchInterval = null;
-let intervalSpeed = 10000;
+let totalTime = 10000;
+let timeRemaining = 0;
 
-
+/* ====================== Calendar actions ====================== */
 
 document.getElementById("TimedEvents").scrollTop = (48 * 8);
 function adjustHeight(element, minHeight) {
@@ -17,41 +19,42 @@ function adjustHeight(element, minHeight) {
         element.style.height = scrollHeight + "px";
     }
 }
-
 function resetHeight(element, minHeight) {
     element.style.height = minHeight + "px";
 }
 
-
+/* ====================== Header actions ====================== */
 function toggleCalendar() {
     var calendarContainer = document.getElementById('cc');
     var toggleButton = document.getElementById('tb');
-    var imageContainer = document.getElementById('id');
+    var imageDisplayer = document.getElementById('imageDisplayer');
 
     if (!isCalendarShown) {
         // Show the calendar
         isCalendarShown = true;
         toggleButton.innerHTML = "Switch to image display"
-        imageContainer.style.display = 'none';
+        imageDisplayer.style.display = 'none';
         calendarContainer.style.display = 'flex';
         pause();
-
     } else {
         // Hide the calendar
         isCalendarShown = false;
         toggleButton.innerHTML = "Switch to calendar"
-        imageContainer.style.display = 'flex';
+        imageDisplayer.style.display = 'flex';
         calendarContainer.style.display = 'none';
-        unPause();
+        play();
+        updateMemoryRing();
     }
 }
 
-// Image methods:
-
+/* ====================== Image actions ====================== */
 function fetchRandomImage() {
     fetch('/api/random_image')
         .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
+            if (!response.ok) {
+                pause();
+                throw new Error('Network response was not ok');
+            }
             console.log("Fetched, paused: " + isPaused + ", calendarShow: " + isCalendarShown);
             return response.json();
         })
@@ -90,6 +93,7 @@ function displayCurrentImage() {
         imageElement.style.opacity = 1;
     }
 }
+/* ====================== Slection controls ====================== */
 function showImageAt(index) {
     if (0 <= index && index < imageQueue.length) {
         currentImageIndex = index;
@@ -110,29 +114,22 @@ function showNextImage() {
     }
 }
 
+/* ====================== Pause ====================== */
 function togglePause() {
     if (!isPaused) {
         pause();
     } else {
-        unPause();
+        play();
     }
 }
 
 function pause() {
     const button = document.getElementById('pauseButton');
     isPaused = true;
-    clearInterval(fetchInterval);
-    fetchInterval = null;
     button.innerText = "Play";
 }
 
-function unPause() {
-    const button = document.getElementById('pauseButton');
-    isPaused = false;
-    startFetching();
-    button.innerText = "Pause";
-}
-
+/* ====================== Memory Ring ====================== */
 function updateMemoryRing() {
     const memoryCircles = document.querySelectorAll('.memoryCircle');
 
@@ -143,74 +140,79 @@ function updateMemoryRing() {
     const offsetLeft = targetCircle.offsetLeft;
     const circleWidth = targetCircle.offsetWidth;
 
-    ring.style.left = (offsetLeft + circleWidth / 2 - ring.offsetWidth / 2) + 'px';
+    const pos = (offsetLeft + circleWidth / 2 - ring.offsetWidth / 2) + 'px';
+    console.log((offsetLeft + circleWidth / 2 - ring.offsetWidth / 2));
+    console.log(pos);
+    ring.style.left = pos;
 }
 
 function increaseSpeed() {
-    if (intervalSpeed > 1000) { // don't go below 1 second
-        intervalSpeed -= 1000; // faster: decrease interval by 1 sec
+    if (totalTime > 1000) { // don't go below 1 second
+        per = timeRemaining / totalTime;
+        totalTime -= 1000; // faster: decrease interval by 1 sec
+        timeRemaining = totalTime * per;
         updateSpeedDisplay();
-        if (!isPaused) startFetching();
+        if (!isPaused) play();
     }
 }
 
 function decreaseSpeed() {
-    if (intervalSpeed < 30000) { // don't go above 30 second
-        intervalSpeed += 1000; // faster: decrease interval by 1 sec
+    if (totalTime < 30000) { // don't go above 30 second
+        per = timeRemaining / totalTime;
+        totalTime += 1000; // faster: decrease interval by 1 sec
+        timeRemaining = totalTime * per;
         updateSpeedDisplay();
-        if (!isPaused) startFetching();
+        if (!isPaused) play();
     }
 }
 
 function updateSpeedDisplay() {
     const speedDisplay = document.getElementById('speedDisplay');
-    speedDisplay.innerText = (intervalSpeed / 1000) + "s";
+    speedDisplay.innerText = (totalTime / 1000) + "s";
+}
+
+function play() {
+    if (!isPaused) return; // Don't start if it's already running
+
+    const button = document.getElementById('pauseButton');
+    isPaused = false;
+    button.innerText = "Pause";
+
+    isPaused = false; // Mark as not paused
+    lastTimestamp = performance.now(); // Get the initial timestamp
+    requestAnimationFrame(updateLoop); // Start the animation loop
 }
 
 
-// Start fetching
-function startFetching() {
-    if (fetchInterval !== null || isPaused) {
-        clearInterval(fetchInterval);
+function updateLoop(timestamp) {
+    if (isPaused) return; // Stop the loop if paused
+
+    // Calculate the time elapsed since the last frame
+    const deltaTime = timestamp - lastTimestamp;
+    timeRemaining -= deltaTime; // Decrease the remaining time
+
+    // Update the display or perform any actions here
+    updateRemainingTimeDisplay(timeRemaining);
+
+    // If the time remaining has reached 0 or passed, trigger the action (e.g., fetch a new image)
+    if (timeRemaining <= 0) {
+        timeRemaining = totalTime; // Reset time remaining
+        fetchRandomImage(); // Call your image-fetching function
     }
-    if (!isPaused) {
-        console.log("pain");
-        fetchInterval = setInterval(fetchRandomImage, intervalSpeed);
-        
-    }
+
+    // Update the last timestamp for the next frame
+    lastTimestamp = timestamp;
+
+    // Keep the animation loop running
+    requestAnimationFrame(updateLoop);
+}
+function updateRemainingTimeDisplay(timeRemaining) {
+    document.getElementById('progressBar').style.width = (100 - 100 * (timeRemaining / totalTime)) + '%';
 }
 
 function init() {
     updateSpeedDisplay();
     fetchRandomImage();
 }
-
-
-function ProgressBar(miliseconds) {
-    const bar = document.getElementById('progressBar');
-    const container = bar.parentElement;
-
-    bar.style.width = '0px'; // reset bar width
-
-    const totalDuration = miliseconds; // milliseconds
-    const containerWidth = container.clientWidth;
-    const startTime = performance.now();
-
-    function animate(time) {
-        const elapsed = time - startTime;
-        const progress = Math.min(elapsed / totalDuration, 1);
-        const width = containerWidth * progress;
-        bar.style.width = width + 'px';
-        if (progress < 1) {
-            requestAnimationFrame(animate);
-        }
-    }
-    requestAnimationFrame(animate);
-}
-
-
-
-
-
 
 init();

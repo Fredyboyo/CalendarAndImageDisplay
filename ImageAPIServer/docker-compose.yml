@@ -1,0 +1,8 @@
+version: '3.8'
+
+services:
+  imageapiservice:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: calendar-image-display:latest  # Set the image name and tag here
